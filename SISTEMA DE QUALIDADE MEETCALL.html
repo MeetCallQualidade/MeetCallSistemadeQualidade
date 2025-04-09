@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoria de Qualidade - Sistema Completo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --roxo-primario: #6a0dad;
+            --laranja-secundario: #ff7b25;
+            --roxo-claro: #9c6fdb;
+            --laranja-claro: #ffa057;
+            --branco: #ffffff;
+            --cinza-claro: #f5f5f5;
+            --cinza-escuro: #333333;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--branco);
+            color: var(--cinza-escuro);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: var(--roxo-primario);
+            color: var(--branco);
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 20px;
+        }
+        
+        h1, h2, h3, h4 {
+            color: var(--roxo-primario);
+        }
+        
+        .agent-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--roxo-claro);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: var(--branco);
+        }
+        
+        .score {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--laranja-secundario);
+            background-color: var(--branco);
+            padding: 10px 20px;
+            border-radius: 50px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .agent-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-card {
+            background-color: var(--cinza-claro);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--laranja-secundario);
+        }
+        
+        .eval-card {
+            background-color: var(--branco);
+            border: 1px solid var(--roxo-claro);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        
+        .eval-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        
+        .eval-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            margin-left: 5px;
+            font-size: 14px;
+            padding: 2px 5px;
+        }
+        
+        .edit-btn {
+            color: var(--roxo-primario);
+        }
+        
+        .delete-btn {
+            color: #d9534f;
+        }
+        
+        .eval-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed var(--roxo-claro);
+        }
+        
+        .eval-score {
+            font-weight: bold;
+            color: var(--laranja-secundario);
+        }
+        
+        .improvement {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: var(--cinza-claro);
+            border-radius: 8px;
+            border-left: 4px solid var(--roxo-primario);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: var(--roxo-primario);
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--roxo-claro);
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        
+        textarea {
+            min-height: 100px;
+        }
+        
+        button {
+            background-color: var(--laranja-secundario);
+            color: var(--branco);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--laranja-claro);
+        }
+        
+        .export-btn {
+            background-color: var(--roxo-primario);
+            margin-top: 20px;
+        }
+        
+        .export-btn:hover {
+            background-color: var(--roxo-claro);
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--roxo-claro);
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: var(--cinza-claro);
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        
+        .tab.active {
+            background-color: var(--roxo-primario);
+            color: var(--branco);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+        
+        .modal-content {
+            background-color: var(--branco);
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: var(--cinza-escuro);
+        }
+        
+        .agent-list {
+            margin-top: 20px;
+        }
+        
+        .agent-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid var(--cinza-claro);
+        }
+        
+        .agent-item:hover {
+            background-color: var(--cinza-claro);
+        }
+        
+        .agent-item-actions button {
+            padding: 5px 10px;
+            margin-left: 5px;
+            font-size: 12px;
+        }
+        
+        .offenders-list {
+            margin-top: 20px;
+        }
+        
+        .offender-card {
+            background-color: #fff3f3;
+            border-left: 4px solid #d9534f;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        
+        .portfolio-selector {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .portfolio-selector select {
+            flex: 1;
+            margin-right: 10px;
+        }
+        
+        .add-portfolio-btn {
+            padding: 10px;
+            white-space: nowrap;
+        }
+        
+        .portfolio-section {
+            margin-top: 30px;
+        }
+        
+        .portfolio-agents {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .portfolio-agent-card {
+            background-color: var(--cinza-claro);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--roxo-primario);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Monitoria de Qualidade</h1>
+            <p>MEETQUALIDADE - SISTEMA DE ACOMPANHAMENTO GERAL OPERACIONAL</p>
+        </header>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="openTab('agent-details', event)">Detalhes do Agente</div>
+            <div class="tab" onclick="openTab('add-eval', event)">Adicionar Avaliação</div>
+            <div class="tab" onclick="openTab('manage-agents', event)">Gerenciar Agentes</div>
+            <div class="tab" onclick="openTab('month-offenders', event)">Ofensores do Mês</div>
+            <div class="tab" onclick="openTab('portfolio-view', event)">Agentes por Carteira</div>
+        </div>
+        
+        <div id="agent-details" class="tab-content active">
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="filter-agent">Filtrar por Agente:</label>
+                    <select id="filter-agent" onchange="applyFilters()">
+                        <option value="">Todos os agentes</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-portfolio">Filtrar por Carteira:</label>
+                    <div class="portfolio-selector">
+                        <select id="filter-portfolio" onchange="applyFilters()">
+                            <option value="">Todas as carteiras</option>
+                        </select>
+                        <button class="add-portfolio-btn" onclick="openModal('addPortfolioModal')">+ Nova Carteira</button>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-date-start">Data Início:</label>
+                    <input type="date" id="filter-date-start" onchange="applyFilters()">
+                </div>
+                <div class="filter-group">
+                    <label for="filter-date-end">Data Fim:</label>
+                    <input type="date" id="filter-date-end" onchange="applyFilters()">
+                </div>
+            </div>
+            
+            <div class="agent-header">
+                <div>
+                    <h2 id="agent-name">Carregando...</h2>
+                    <p id="agent-position">Cargo: </p>
+                    <p id="agent-portfolio">Carteira: </p>
+                </div>
+                <div class="score" id="agent-score">0/100</div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="performanceChart"></canvas>
+            </div>
+            
+            <div class="agent-info">
+                <div class="info-card">
+                    <h3>Total de Avaliações</h3>
+                    <p id="total-evals">-</p>
+                </div>
+                <div class="info-card">
+                    <h3>Média Geral</h3>
+                    <p id="average-score">-</p>
+                </div>
+            </div>
+            
+            <h2>Últimas Avaliações</h2>
+            <div id="evaluations-list">
+                <!-- Avaliações serão inseridas aqui via JavaScript -->
+            </div>
+            
+            <div class="improvement">
+                <h3>Áreas para Melhoria</h3>
+                <ul id="improvement-areas">
+                    <li>Carregando recomendações...</li>
+                </ul>
+            </div>
+            
+            <button class="export-btn" onclick="exportToExcel()">Exportar para Excel</button>
+        </div>
+        
+        <div id="add-eval" class="tab-content">
+            <h2 id="eval-form-title">Adicionar Nova Avaliação</h2>
+            <form id="evaluation-form">
+                <input type="hidden" id="eval-id">
+                <div class="form-group">
+                    <label for="agent-select">Agente Avaliado:</label>
+                    <select id="agent-select" required>
+                        <option value="">Selecione um agente</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="eval-date">Data da Avaliação:</label>
+                    <input type="date" id="eval-date" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="supervisor">Supervisor:</label>
+                    <input type="text" id="supervisor" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="portfolio">Carteira de Atuação:</label>
+                    <div class="portfolio-selector">
+                        <select id="portfolio" required>
+                            <option value="">Selecione a carteira</option>
+                        </select>
+                        <button type="button" class="add-portfolio-btn" onclick="openModal('addPortfolioModal')">+ Nova Carteira</button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="call-data">Dados da Ligação:</label>
+                    <input type="text" id="call-data" placeholder="Número do protocolo, ID da chamada, etc." required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="client-data">Dados do Cliente:</label>
+                    <input type="text" id="client-data" placeholder="Nome, CPF, etc.">
+                </div>
+                
+                <div class="form-group">
+                    <label for="quality-score">Nota de Qualidade (0-100):</label>
+                    <input type="number" id="quality-score" min="0" max="100" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="feedback">Observações do Feedback:</label>
+                    <textarea id="feedback" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Problemas Identificados:</label><br>
+                    <input type="checkbox" id="issue-comunication" name="issues" value="Comunicação">
+                    <label for="issue-comunication">Comunicação</label><br>
+                    
+                    <input type="checkbox" id="issue-procedure" name="issues" value="Procedimento">
+                    <label for="issue-procedure">Procedimento</label><br>
+                    
+                    <input type="checkbox" id="issue-knowledge" name="issues" value="Conhecimento">
+                    <label for="issue-knowledge">Conhecimento</label><br>
+                    
+                    <input type="checkbox" id="issue-service" name="issues" value="Atendimento">
+                    <label for="issue-service">Atendimento</label><br>
+                    
+                    <input type="checkbox" id="issue-time" name="issues" value="Tempo de Resposta">
+                    <label for="issue-time">Tempo de Resposta</label>
+                </div>
+                
+                <button type="button" onclick="saveEvaluation()" id="save-eval-btn">Salvar Avaliação</button>
+                <button type="button" onclick="cancelEdit()" id="cancel-edit-btn" style="display: none; background-color: var(--cinza-escuro); margin-left: 10px;">Cancelar</button>
+            </form>
+        </div>
+        
+        <div id="manage-agents" class="tab-content">
+            <h2>Gerenciar Agentes</h2>
+            
+            <div class="form-group">
+                <label for="new-agent-name">Nome do Agente:</label>
+                <input type="text" id="new-agent-name" placeholder="Nome completo">
+            </div>
+            
+            <div class="form-group">
+                <label for="new-agent-position">Cargo:</label>
+                <input type="text" id="new-agent-position" placeholder="Cargo/função">
+            </div>
+            
+            <div class="form-group">
+                <label for="new-agent-portfolio">Carteira de Atuação:</label>
+                <div class="portfolio-selector">
+                    <select id="new-agent-portfolio">
+                        <option value="">Selecione a carteira</option>
+                    </select>
+                    <button type="button" class="add-portfolio-btn" onclick="openModal('addPortfolioModal')">+ Nova Carteira</button>
+                </div>
+            </div>
+            
+            <button type="button" onclick="addNewAgent()">Adicionar Agente</button>
+            
+            <div class="agent-list">
+                <h3>Lista de Agentes</h3>
+                <div id="agents-list-container">
+                    <!-- Lista de agentes será preenchida aqui -->
+                </div>
+            </div>
+        </div>
+        
+        <div id="month-offenders" class="tab-content">
+            <h2>Ofensores do Mês</h2>
+            <p>Agentes com notas abaixo de 80% no período selecionado</p>
+            
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="offender-month">Mês:</label>
+                    <input type="month" id="offender-month" onchange="updateOffendersList()">
+                </div>
+                <div class="filter-group">
+                    <label for="offender-portfolio">Carteira:</label>
+                    <div class="portfolio-selector">
+                        <select id="offender-portfolio" onchange="updateOffendersList()">
+                            <option value="">Todas as carteiras</option>
+                        </select>
+                        <button type="button" class="add-portfolio-btn" onclick="openModal('addPortfolioModal')">+ Nova Carteira</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="offenders-list" id="offenders-list-container">
+                <!-- Lista de ofensores será preenchida aqui -->
+            </div>
+        </div>
+        
+        <div id="portfolio-view" class="tab-content">
+            <h2>Agentes por Carteira</h2>
+            <p>Visualização completa dos agentes organizados por carteira de atuação</p>
+            
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="view-portfolio">Filtrar Carteira:</label>
+                    <div class="portfolio-selector">
+                        <select id="view-portfolio" onchange="updatePortfolioView()">
+                            <option value="">Todas as carteiras</option>
+                        </select>
+                        <button type="button" class="add-portfolio-btn" onclick="openModal('addPortfolioModal')">+ Nova Carteira</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="portfolio-view-container">
+                <!-- Conteúdo será preenchido por JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para confirmação de exclusão -->
+    <div id="confirmDeleteModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('confirmDeleteModal')">&times;</span>
+            <h3>Confirmar Exclusão</h3>
+            <p id="delete-modal-text">Tem certeza que deseja excluir este item?</p>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="closeModal('confirmDeleteModal')" style="background-color: var(--cinza-escuro);">Cancelar</button>
+                <button onclick="confirmDelete()" style="background-color: #d9534f; margin-left: 10px;">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para adicionar nova carteira -->
+    <div id="addPortfolioModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addPortfolioModal')">&times;</span>
+            <h3>Adicionar Nova Carteira</h3>
+            <div class="form-group">
+                <label for="new-portfolio-name">Nome da Carteira:</label>
+                <input type="text" id="new-portfolio-name" placeholder="Digite o nome da nova carteira">
+            </div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="closeModal('addPortfolioModal')" style="background-color: var(--cinza-escuro);">Cancelar</button>
+                <button onclick="addNewPortfolio()" style="margin-left: 10px;">Adicionar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variáveis globais
+        let agents = [];
+        let evaluations = [];
+        let portfolios = [];
+        let currentAgentId = null;
+        let currentEditEvalId = null;
+        let deleteType = '';
+        let deleteId = null;
+        let performanceChart = null;
+        
+        // Lista de agentes por carteira (pré-cadastrados)
+        const predefinedAgents = {
+            "Sicredi": [
+                "ISABELLA MARCULINO CLAUDINO", "MARIANA MORAES BARROS", "THAMIRIS BENTO MARTINS", 
+                "MAYARA VIEIRA", "MATHEUS CAVALCANTE DE OLIVEIRA", "LANA BEATRIZ MIRANDA ROCHA",
+                "VITÓRIA BAHIENSE ADELINO", "MILLENA DAVID PIO DE OLIVEIRA", "AGATTA VITÓRIA CAMPOS DE JESUS",
+                "JULIA CHRISTINE CERQUEIRA FIGUEIRA", "ENZO GONÇALVES DA SILVA", "IVONE DA SILVA COUTINHO",
+                "IRYS ALVES NICACIO", "GABRIEL BEIRIS DE SOUZA", "EVELLYN OLIVEIRA LEITE",
+                "CATARINA SOUZA DA SILVA", "GLAUCIA REGINA CAMPOS", "EMANUELE DAMARIS",
+                "MARIANA BRAGA SOARES", "MARGARETH CONCEIÇÃO DE ARAUJO", "JESSICA RIBEIRO SOUZA",
+                "YASMIN GALDINO DE SOUZA", "ANNA BEATRIZ FERREIRA DA SILVA"
+            ],
+            "QuintoAndar": [
+                "ANA PAULA RANGEL", "AMANDA FERREIRA OLIVEIRA VICTORINO", "PAULO CESAR RODRIGUES ANTONIO",
+                "CAROLINE BARBOSA NASCIMENTO", "NATALIA ALMEIDA DE OLIVEIRA", "PRISCILA SILVA DE LIMA",
+                "BIANCA PEREIRA LIMA", "CAIO FABIO RAMOS COSTA", "LUIZ DANIEL HENRIQUEZ THEDIM",
+                "LUIZ FELIPE ALVES DA SILVA", "CHARLENE MARIA MATIAS BARBOSA", "THAMIRES DO NASIMENTO SANTOS",
+                "RENATA MARQUES DE SOUZA DA COSTA", "PATRICIA VICENTE DOS SANTOS BENDIA", "NAJARA LOPES",
+                "GLAUCIO ALVES ANTONIO", "FERNANDO HENRIQUE CHAGAS DA COSTA"
+            ],
+            "Arteris": [
+                "MARIA EDUARDA RODRIGUES MARQUES"
+            ],
+            "Cresol": [
+                "VINICIUS RODRIGO MATIAS"
+            ],
+            "Banco da Familia": [
+                "ANA CAROLINE DOS SANTOS MENDES", "HEFA KARLA SOUZA DE OLIVEIRA"
+            ],
+            "PUC": [
+                "EMERSON FERNANDO MACIEL DE SOUZA", "GABRIEL NUNES RAMOS", "KEVIN ROBERTO VITOR VIEIRA"
+            ],
+            "Contabilizei": [
+                "MARIANA DA SILVA SARTORI BATISTA", "MIRIAN JESSICA DE SOUZA NASCIMENTO",
+                "ANA BEATRIZ SANTOS FRANCO", "LARA KAROLYNN BRANCO DE OLIVEIRA"
+            ],
+            "Ailos": [
+                "GABRIELLA LORENZA RODRIGUES", "BEATRIZ MICAELLY", "GISLEINE FRANCO DA CONCEIÇÃO",
+                "AMANDA CORREA COROLLO", "DAVID VITOR REIS DOS SANTOS", "ANNA VICTORIA TROYAN CAMERA",
+                "KELLY MAIARA DA SILVA"
+            ],
+            "Athena Saúde": [
+                "BIANCA GUERRA", "NATAN APARECIDO", "JACKSON FERRAZZA", "CAMILLA DO CARMO OLIVEIRA",
+                "CARLOS AUGUSTO FABRI SANTANA", "GLACIELE GUERRA DA SILVA", "CRYSTYANN SZCZYTKOVSKI SILVA",
+                "ALESSANDRA DANIELUK SOUZA", "ARIANE ALVES DE SOUZA", "ROGERIA DE SOUZA VENTRIGLIA",
+                "EMYLLY KAROLINE MAIA DE PAULA", "DANIELA FEITOSA DA SILVA", "DESIRRE MEDEIROS",
+                "MARIA CLARA ARAUJO NERY", "ISABELLY VITORIA DA SILVA SOARES", "GABRIELA GRISOLIA DE ALBUQUERQUE",
+                "MARIA CLAUDIA DE OLIVEIRA DA SILVA", "FLAVIA DE SOUZA GUIMARÃES", "ANA BEATRIZ CAMPOS",
+                "VITOR DA SILVA PRAZERES", "HANNAH VITORIA", "LUARA LIMA BARRETO", "JULYA DE BRITO MENEZES",
+                "VANESSA MARIA DO NASCIMENTO DE SOUZA", "RAPHAELA PEREIRA GONÇALVES",
+                "GRAZZYELLY MELRYE DOS ANJOS DE OLIVEIRA", "JULIA LIMA CONSENZO DA CONCEIÇÃO",
+                "MARIA EDUARDA SAMPAIO DOS SANTOS", "MARIA EDUARDA AZEVEDO", "JENNIFER DA SILVA DE PAULA",
+                "DOUGLAS GONÇALVES COELHO", "EVELYN EDUARDA ROCHA DA SILVA", "EDUARDA COUTINHO DA SILVA"
+            ],
+            "Crediffato": [
+                "DREICE LAURINDO DOS SANTOS", "KETLLYN LETICIA", "ERIC RODRIGO", "GABRIELE DIAS",
+                "JÉSSICA CRISTINA FERNANDES", "MILENA CAROLINE DE SOUSA DE GODOI",
+                "MARIA BEATRIZ DE LARA RIBEIRO DOS SANTOS"
+            ],
+            "Senff": [
+                "JORDAN CAVALCANTE", "LEANDRO BEBIANO DE LIMA", "ANNE LOUISE DA SILVA PONTES",
+                "JUCEIA SILVA CRUZ", "ALEXANDRA TIELLY MARINHO", "RAFAELA MELANI DA SILVA",
+                "ANDRIELLY ANTUNES WERLEN"
+            ],
+            "Senai": [
+                "LUIS GUSTAVO", "MAYARA SOARES", "JASMIN LUANA", "JOAO MACHADO", "GABRIELA NUNES",
+                "LINDA INÊS"
+            ],
+            "Crefaz": [
+                "SILVANA MENEZES SOARES", "KETLIN CAROLINE SANTOS QUEIROZ", "FERNANDA SILVA GALVÃO",
+                "HAYANE GONÇALVES NEIMAN", "BEATRIZ KAMILE MACHADO", "TANIA MARISA",
+                "GUILHERME DE ANDRADE", "RHAYSSA MARINS", "JULIE GERTRUDES DE SOUZA",
+                "DEBORA MILITÃO", "DJULIANE DE OLIVEIRA", "MAIANY LEAL VIRISSIMO",
+                "DANIELLE DOS SANTOS", "KAIO ALEXANDRE DA SILVA ROSA", "HEVELYM ESTER DE FREITAS CARNEIRO",
+                "CLEVERSON NOVACK", "MATHEUS NATAN VELOSO", "MARIA EDUARDA PETRI",
+                "KAUANE VITORIA", "EVELIN VITORIA ALBIN DE MOURA", "SANDY SABRINA",
+                "CIBELE MOREIRA SANTOS SÁ", "INDRID TAYANE", "JOAO VITOR NOGUEIRA",
+                "CAMILA GODOI", "DEBORA BEATRIZ BORGES PADILHA", "DEBORA PATRICIA",
+                "ELIANE DE FATIMA", "KAUAN FILIPE", "AMANDA CASTRO MONTEIRO"
+            ]
+        };
+        
+        // Ao carregar a página
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            displayAgentDetails();
+            populateAgentSelect();
+            populateFilterAgent();
+            updateAgentsList();
+            setupDateFilters();
+            updateOffendersList();
+            updatePortfolioView();
+            
+            // Define o mês atual como padrão para ofensores
+            const today = new Date();
+            document.getElementById('offender-month').value = today.toISOString().slice(0, 7);
+        });
+        
+        // Função para abrir abas - CORRIGIDA
+        function openTab(tabId, event) {
+            // Esconde todos os conteúdos de abas
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove a classe active de todas as abas
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Mostra a aba selecionada
+            document.getElementById(tabId).classList.add('active');
+            
+            // Adiciona classe active na aba clicada
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            } else {
+                // Fallback caso o event não esteja disponível
+                document.querySelector(`.tab[onclick*="${tabId}"]`).classList.add('active');
+            }
+            
+            // Atualiza gráficos se for a aba de detalhes
+            if (tabId === 'agent-details') {
+                setTimeout(updateCharts, 100);
+            }
+            
+            // Atualiza lista de ofensores se for a aba correspondente
+            if (tabId === 'month-offenders') {
+                updateOffendersList();
+            }
+            
+            // Atualiza visualização por carteira se for a aba correspondente
+            if (tabId === 'portfolio-view') {
+                updatePortfolioView();
+            }
+        }
+        
+        // Carrega dados do localStorage
+        function loadData() {
+            const savedAgents = localStorage.getItem('qualityAgents');
+            const savedEvals = localStorage.getItem('qualityEvaluations');
+            const savedPortfolios = localStorage.getItem('qualityPortfolios');
+            
+            if (savedAgents) {
+                agents = JSON.parse(savedAgents);
+            } else {
+                // Dados iniciais de exemplo com os agentes pré-definidos
+                agents = [];
+                for (const [portfolio, names] of Object.entries(predefinedAgents)) {
+                    names.forEach((name, index) => {
+                        agents.push({
+                            id: agents.length + 1,
+                            name: name,
+                            position: "Atendente",
+                            portfolio: portfolio
+                        });
+                    });
+                }
+                localStorage.setItem('qualityAgents', JSON.stringify(agents));
+            }
+            
+            if (savedEvals) {
+                evaluations = JSON.parse(savedEvals);
+            } else {
+                // Avaliações iniciais de exemplo
+                evaluations = [
+                    {
+                        id: 1,
+                        agentId: 1,
+                        date: new Date().toISOString().split('T')[0],
+                        supervisor: "Ana Paula",
+                        portfolio: "Sicredi",
+                        callData: "Protocolo #12345",
+                        clientData: "Cliente XPTO",
+                        score: 75,
+                        feedback: "Atendimento regular, precisa melhorar tempo de resposta.",
+                        issues: ["Comunicação", "Tempo de Resposta"]
+                    },
+                    {
+                        id: 2,
+                        agentId: 1,
+                        date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        supervisor: "Carlos Mendes",
+                        portfolio: "Sicredi",
+                        callData: "Protocolo #67890",
+                        clientData: "Cliente ABCD",
+                        score: 82,
+                        feedback: "Atendimento correto, mas poderia ser mais simpático com o cliente.",
+                        issues: ["Atendimento"]
+                    },
+                    {
+                        id: 3,
+                        agentId: 2,
+                        date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        supervisor: "Ana Paula",
+                        portfolio: "QuintoAndar",
+                        callData: "Protocolo #54321",
+                        clientData: "Cliente YZ",
+                        score: 88,
+                        feedback: "Excelente desempenho, resolveu o problema rapidamente.",
+                        issues: []
+                    },
+                    {
+                        id: 4,
+                        agentId: 3,
+                        date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        supervisor: "Carlos Mendes",
+                        portfolio: "Athena Saúde",
+                        callData: "Protocolo #98765",
+                        clientData: "Cliente KLM",
+                        score: 78,
+                        feedback: "Precisa melhorar conhecimento do produto.",
+                        issues: ["Conhecimento"]
+                    }
+                ];
+                localStorage.setItem('qualityEvaluations', JSON.stringify(evaluations));
+            }
+            
+            if (savedPortfolios) {
+                portfolios = JSON.parse(savedPortfolios);
+            } else {
+                // Carteiras iniciais
+                portfolios = Object.keys(predefinedAgents);
+                localStorage.setItem('qualityPortfolios', JSON.stringify(portfolios));
+            }
+            
+            // Define o agente atual como o primeiro da lista
+            if (agents.length > 0) {
+                currentAgentId = agents[0].id;
+            }
+            
+            // Atualiza os selects de carteira
+            updatePortfolioSelects();
+        }
+        
+        // Atualiza todos os selects de carteira
+        function updatePortfolioSelects() {
+            const portfolioSelects = [
+                document.getElementById('portfolio'),
+                document.getElementById('filter-portfolio'),
+                document.getElementById('new-agent-portfolio'),
+                document.getElementById('offender-portfolio'),
+                document.getElementById('view-portfolio')
+            ];
+            
+            portfolioSelects.forEach(select => {
+                if (!select) return;
+                
+                const currentValue = select.value;
+                select.innerHTML = '';
+                
+                // Adiciona a opção padrão
+                if (select.id !== 'portfolio' && select.id !== 'new-agent-portfolio') {
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.textContent = select.id === 'filter-portfolio' || select.id === 'offender-portfolio' || select.id === 'view-portfolio' ? 
+                                              'Todas as carteiras' : 'Selecione a carteira';
+                    select.appendChild(defaultOption);
+                } else {
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.textContent = 'Selecione a carteira';
+                    select.appendChild(defaultOption);
+                }
+                
+                // Adiciona as carteiras
+                portfolios.forEach(portfolio => {
+                    const option = document.createElement('option');
+                    option.value = portfolio;
+                    option.textContent = portfolio;
+                    select.appendChild(option);
+                });
+                
+                // Mantém o valor selecionado se ainda existir
+                if (currentValue && portfolios.includes(currentValue)) {
+                    select.value = currentValue;
+                }
+            });
+        }
+        
+        // Adiciona nova carteira
+        function addNewPortfolio() {
+            const newPortfolioInput = document.getElementById('new-portfolio-name');
+            const newPortfolio = newPortfolioInput.value.trim();
+            
+            if (!newPortfolio) {
+                alert('Por favor, digite o nome da nova carteira!');
+                return;
+            }
+            
+            if (portfolios.includes(newPortfolio)) {
+                alert('Esta carteira já existe!');
+                return;
+            }
+            
+            portfolios.push(newPortfolio);
+            localStorage.setItem('qualityPortfolios', JSON.stringify(portfolios));
+            
+            // Atualiza os selects e limpa o campo
+            updatePortfolioSelects();
+            newPortfolioInput.value = '';
+            closeModal('addPortfolioModal');
+            
+            alert(`Carteira "${newPortfolio}" adicionada com sucesso!`);
+        }
+        
+        // Configura os filtros de data para padrão (últimos 30 dias)
+        function setupDateFilters() {
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(endDate.getDate() - 30);
+            
+            document.getElementById('filter-date-end').value = endDate.toISOString().split('T')[0];
+            document.getElementById('filter-date-start').value = startDate.toISOString().split('T')[0];
+        }
+        
+        // Exibe detalhes do agente
+        function displayAgentDetails(agentId = null) {
+            if (agentId) currentAgentId = agentId;
+            
+            const agent = agents.find(a => a.id == currentAgentId) || agents[0];
+            if (!agent) return;
+            
+            const agentEvals = getFilteredEvaluations().filter(e => e.agentId == agent.id);
+            const avgScore = agentEvals.length > 0 ? 
+                Math.round(agentEvals.reduce((sum, eval) => sum + eval.score, 0) / agentEvals.length) : 0;
+            
+            // Atualiza cabeçalho
+            document.getElementById('agent-name').textContent = agent.name;
+            document.getElementById('agent-position').textContent = `Cargo: ${agent.position}`;
+            document.getElementById('agent-portfolio').textContent = `Carteira: ${agent.portfolio || 'Não definida'}`;
+            document.getElementById('agent-score').textContent = `${avgScore}/100`;
+            
+            // Atualiza informações
+            document.getElementById('total-evals').textContent = agentEvals.length;
+            document.getElementById('average-score').textContent = avgScore > 0 ? `${avgScore}/100` : 'N/A';
+            
+            // Lista avaliações
+            const evalList = document.getElementById('evaluations-list');
+            evalList.innerHTML = '';
+            
+            if (agentEvals.length === 0) {
+                evalList.innerHTML = '<p>Nenhuma avaliação encontrada para este agente.</p>';
+                return;
+            }
+            
+            agentEvals.forEach(eval => {
+                const evalDate = new Date(eval.date);
+                const formattedDate = evalDate.toLocaleDateString('pt-BR');
+                
+                const evalCard = document.createElement('div');
+                evalCard.className = 'eval-card';
+                evalCard.innerHTML = `
+                    <div class="eval-actions">
+                        <button class="edit-btn" onclick="editEvaluation(${eval.id})">✏️ Editar</button>
+                        <button class="delete-btn" onclick="confirmDeleteEval(${eval.id})">🗑️ Excluir</button>
+                    </div>
+                    <div class="eval-header">
+                        <div>
+                            <strong>Data:</strong> ${formattedDate} - 
+                            <strong>Supervisor:</strong> ${eval.supervisor} - 
+                            <strong>Carteira:</strong> ${eval.portfolio}
+                        </div>
+                        <div class="eval-score">${eval.score}/100</div>
+                    </div>
+                    <p><strong>Dados da ligação:</strong> ${eval.callData}</p>
+                    <p><strong>Cliente:</strong> ${eval.clientData}</p>
+                    <p><strong>Feedback:</strong> ${eval.feedback}</p>
+                    <p><strong>Problemas:</strong> ${eval.issues.join(', ') || 'Nenhum problema identificado'}</p>
+                `;
+                
+                evalList.appendChild(evalCard);
+            });
+            
+            // Áreas de melhoria (baseadas nas avaliações)
+            updateImprovementAreas(agentEvals);
+            
+            // Atualiza gráficos
+            updateCharts();
+        }
+        
+        // Atualiza áreas de melhoria
+        function updateImprovementAreas(agentEvals) {
+            const improvementList = document.getElementById('improvement-areas');
+            improvementList.innerHTML = '';
+            
+            // Análise simples para sugerir melhorias
+            const allIssues = agentEvals.flatMap(eval => eval.issues);
+            const issueCounts = {};
+            
+            allIssues.forEach(issue => {
+                issueCounts[issue] = (issueCounts[issue] || 0) + 1;
+            });
+            
+            // Ordena problemas por frequência
+            const sortedIssues = Object.entries(issueCounts).sort((a, b) => b[1] - a[1]);
+            
+            if (sortedIssues.length === 0) {
+                improvementList.innerHTML = '<li>Nenhuma área crítica identificada recentemente</li>';
+                return;
+            }
+            
+            // Pega os 3 problemas mais frequentes
+            const topIssues = sortedIssues.slice(0, 3);
+            
+            topIssues.forEach(([issue, count]) => {
+                const li = document.createElement('li');
+                li.textContent = `Melhorar ${issue.toLowerCase()} (${count} ocorrência${count > 1 ? 's' : ''})`;
+                improvementList.appendChild(li);
+            });
+        }
+        
+        // Atualiza gráficos de desempenho
+        function updateCharts() {
+            const agent = agents.find(a => a.id == currentAgentId);
+            if (!agent) return;
+            
+            const agentEvals = getFilteredEvaluations().filter(e => e.agentId == agent.id);
+            
+            // Ordena avaliações por data
+            agentEvals.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            
+            // Destrói o gráfico anterior se existir
+            if (performanceChart) {
+                performanceChart.destroy();
+            }
+            
+            // Cria novo gráfico
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: agentEvals.map(eval => new Date(eval.date).toLocaleDateString('pt-BR')),
+                    datasets: [{
+                        label: 'Notas de Qualidade',
+                        data: agentEvals.map(eval => eval.score),
+                        borderColor: 'rgb(106, 13, 173)',
+                        backgroundColor: 'rgba(106, 13, 173, 0.1)',
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 50,
+                            max: 100
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `Desempenho de ${agent.name}`,
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: function(context) {
+                                    const eval = agentEvals[context.dataIndex];
+                                    return `Supervisor: ${eval.supervisor}\nCarteira: ${eval.portfolio}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Preenche o select de agentes
+        function populateAgentSelect() {
+            const select = document.getElementById('agent-select');
+            select.innerHTML = '<option value="">Selecione um agente</option>';
+            
+            agents.forEach(agent => {
+                const option = document.createElement('option');
+                option.value = agent.id;
+                option.textContent = `${agent.name} (${agent.position}) - ${agent.portfolio || 'Sem carteira'}`;
+                select.appendChild(option);
+            });
+        }
+        
+        // Preenche o filtro de agentes
+        function populateFilterAgent() {
+            const select = document.getElementById('filter-agent');
+            select.innerHTML = '<option value="">Todos os agentes</option>';
+            
+            agents.forEach(agent => {
+                const option = document.createElement('option');
+                option.value = agent.id;
+                option.textContent = `${agent.name} (${agent.position})`;
+                if (agent.id == currentAgentId) option.selected = true;
+                select.appendChild(option);
+            });
+        }
+        
+        // Aplica filtros
+        function applyFilters() {
+            const agentId = document.getElementById('filter-agent').value;
+            if (agentId) {
+                currentAgentId = parseInt(agentId);
+                displayAgentDetails();
+            } else {
+                // Se nenhum agente específico foi selecionado, mostra o primeiro da lista
+                if (agents.length > 0) {
+                    currentAgentId = agents[0].id;
+                    displayAgentDetails();
+                }
+            }
+        }
+        
+        // Obtém avaliações filtradas
+        function getFilteredEvaluations() {
+            const portfolioFilter = document.getElementById('filter-portfolio').value;
+            const dateStart = document.getElementById('filter-date-start').value;
+            const dateEnd = document.getElementById('filter-date-end').value;
+            
+            return evaluations.filter(eval => {
+                // Filtro por carteira
+                if (portfolioFilter && eval.portfolio !== portfolioFilter) return false;
+                
+                // Filtro por data
+                if (dateStart && eval.date < dateStart) return false;
+                if (dateEnd && eval.date > dateEnd) return false;
+                
+                return true;
+            });
+        }
+        
+        // Salva nova avaliação ou atualiza existente
+        function saveEvaluation() {
+            // Validação básica
+            const agentSelect = document.getElementById('agent-select');
+            const evalDate = document.getElementById('eval-date');
+            const supervisor = document.getElementById('supervisor');
+            const portfolio = document.getElementById('portfolio');
+            const callData = document.getElementById('call-data');
+            const clientData = document.getElementById('client-data');
+            const qualityScore = document.getElementById('quality-score');
+            const feedback = document.getElementById('feedback');
+            
+            if (!agentSelect.value || !evalDate.value || !supervisor.value || !portfolio.value || 
+                !callData.value || !qualityScore.value || !feedback.value) {
+                alert('Por favor, preencha todos os campos obrigatórios!');
+                return;
+            }
+            
+            // Coleta problemas identificados
+            const issues = [];
+            document.querySelectorAll('input[name="issues"]:checked').forEach(checkbox => {
+                issues.push(checkbox.value);
+            });
+            
+            if (currentEditEvalId) {
+                // Edição de avaliação existente
+                const evalIndex = evaluations.findIndex(e => e.id === currentEditEvalId);
+                if (evalIndex !== -1) {
+                    evaluations[evalIndex] = {
+                        ...evaluations[evalIndex],
+                        agentId: parseInt(agentSelect.value),
+                        date: evalDate.value,
+                        supervisor: supervisor.value,
+                        portfolio: portfolio.value,
+                        callData: callData.value,
+                        clientData: clientData.value,
+                        score: parseInt(qualityScore.value),
+                        feedback: feedback.value,
+                        issues: issues
+                    };
+                }
+            } else {
+                // Nova avaliação
+                const newEvaluation = {
+                    id: evaluations.length > 0 ? Math.max(...evaluations.map(e => e.id)) + 1 : 1,
+                    agentId: parseInt(agentSelect.value),
+                    date: evalDate.value,
+                    supervisor: supervisor.value,
+                    portfolio: portfolio.value,
+                    callData: callData.value,
+                    clientData: clientData.value,
+                    score: parseInt(qualityScore.value),
+                    feedback: feedback.value,
+                    issues: issues
+                };
+                
+                evaluations.push(newEvaluation);
+            }
+            
+            // Salva no localStorage
+            localStorage.setItem('qualityEvaluations', JSON.stringify(evaluations));
+            
+            // Feedback e limpeza
+            alert('Avaliação salva com sucesso!');
+            resetEvalForm();
+            
+            // Atualiza a exibição
+            currentAgentId = parseInt(agentSelect.value);
+            displayAgentDetails();
+            populateFilterAgent();
+            updateOffendersList();
+            openTab('agent-details');
+        }
+        
+        // Edita uma avaliação existente
+        function editEvaluation(evalId) {
+            const eval = evaluations.find(e => e.id === evalId);
+            if (!eval) return;
+            
+            currentEditEvalId = evalId;
+            
+            // Preenche o formulário com os dados da avaliação
+            document.getElementById('eval-id').value = eval.id;
+            document.getElementById('agent-select').value = eval.agentId;
+            document.getElementById('eval-date').value = eval.date;
+            document.getElementById('supervisor').value = eval.supervisor;
+            document.getElementById('portfolio').value = eval.portfolio;
+            document.getElementById('call-data').value = eval.callData;
+            document.getElementById('client-data').value = eval.clientData;
+            document.getElementById('quality-score').value = eval.score;
+            document.getElementById('feedback').value = eval.feedback;
+            
+            // Limpa todos os checkboxes primeiro
+            document.querySelectorAll('input[name="issues"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Marca os checkboxes correspondentes
+            eval.issues.forEach(issue => {
+                const checkbox = document.querySelector(`input[name="issues"][value="${issue}"]`);
+                if (checkbox) checkbox.checked = true;
+            });
+            
+            // Atualiza o título e botões do formulário
+            document.getElementById('eval-form-title').textContent = 'Editar Avaliação';
+            document.getElementById('save-eval-btn').textContent = 'Atualizar Avaliação';
+            document.getElementById('cancel-edit-btn').style.display = 'inline-block';
+            
+            // Abre a aba de edição
+            openTab('add-eval', event);
+        }
+        
+        // Cancela a edição
+        function cancelEdit() {
+            resetEvalForm();
+            openTab('agent-details', event);
+        }
+        
+        // Reseta o formulário de avaliação
+        function resetEvalForm() {
+            document.getElementById('evaluation-form').reset();
+            document.getElementById('eval-id').value = '';
+            document.getElementById('eval-form-title').textContent = 'Adicionar Nova Avaliação';
+            document.getElementById('save-eval-btn').textContent = 'Salvar Avaliação';
+            document.getElementById('cancel-edit-btn').style.display = 'none';
+            currentEditEvalId = null;
+        }
+        
+        // Confirma exclusão de avaliação
+        function confirmDeleteEval(evalId) {
+            deleteType = 'evaluation';
+            deleteId = evalId;
+            document.getElementById('delete-modal-text').textContent = 'Tem certeza que deseja excluir esta avaliação? Esta ação não pode ser desfeita.';
+            openModal('confirmDeleteModal');
+        }
+        
+        // Confirma exclusão de agente
+        function confirmDeleteAgent(agentId) {
+            deleteType = 'agent';
+            deleteId = agentId;
+            const agent = agents.find(a => a.id === agentId);
+            document.getElementById('delete-modal-text').textContent = `Tem certeza que deseja excluir o agente ${agent.name}? Todas as avaliações relacionadas também serão removidas.`;
+            openModal('confirmDeleteModal');
+        }
+        
+        // Executa a exclusão confirmada
+        function confirmDelete() {
+            if (deleteType === 'evaluation') {
+                evaluations = evaluations.filter(e => e.id !== deleteId);
+                localStorage.setItem('qualityEvaluations', JSON.stringify(evaluations));
+                displayAgentDetails();
+            } else if (deleteType === 'agent') {
+                // Remove o agente e suas avaliações
+                agents = agents.filter(a => a.id !== deleteId);
+                evaluations = evaluations.filter(e => e.agentId !== deleteId);
+                localStorage.setItem('qualityAgents', JSON.stringify(agents));
+                localStorage.setItem('qualityEvaluations', JSON.stringify(evaluations));
+                
+                // Atualiza a interface
+                if (currentAgentId === deleteId) {
+                    currentAgentId = agents.length > 0 ? agents[0].id : null;
+                }
+                
+                populateAgentSelect();
+                populateFilterAgent();
+                updateAgentsList();
+                displayAgentDetails();
+                updateOffendersList();
+                updatePortfolioView();
+            }
+            
+            closeModal('confirmDeleteModal');
+        }
+        
+        // Abre um modal
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+        
+        // Fecha um modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        // Adiciona novo agente
+        function addNewAgent() {
+            const nameInput = document.getElementById('new-agent-name');
+            const positionInput = document.getElementById('new-agent-position');
+            const portfolioInput = document.getElementById('new-agent-portfolio');
+            
+            if (!nameInput.value || !positionInput.value) {
+                alert('Por favor, preencha todos os campos obrigatórios!');
+                return;
+            }
+            
+            const newAgent = {
+                id: agents.length > 0 ? Math.max(...agents.map(a => a.id)) + 1 : 1,
+                name: nameInput.value,
+                position: positionInput.value,
+                portfolio: portfolioInput.value || null
+            };
+            
+            agents.push(newAgent);
+            localStorage.setItem('qualityAgents', JSON.stringify(agents));
+            
+            // Limpa os campos e atualiza a lista
+            nameInput.value = '';
+            positionInput.value = '';
+            portfolioInput.value = '';
+            updateAgentsList();
+            populateAgentSelect();
+            populateFilterAgent();
+            updateOffendersList();
+            updatePortfolioView();
+            
+            alert('Agente adicionado com sucesso!');
+        }
+        
+        // Atualiza a lista de agentes na interface
+        function updateAgentsList() {
+            const container = document.getElementById('agents-list-container');
+            container.innerHTML = '';
+            
+            if (agents.length === 0) {
+                container.innerHTML = '<p>Nenhum agente cadastrado.</p>';
+                return;
+            }
+            
+            agents.forEach(agent => {
+                const agentItem = document.createElement('div');
+                agentItem.className = 'agent-item';
+                agentItem.innerHTML = `
+                    <div>
+                        <strong>${agent.name}</strong> - ${agent.position} ${agent.portfolio ? `(${agent.portfolio})` : ''}
+                    </div>
+                    <div class="agent-item-actions">
+                        <button onclick="viewAgentDetails(${agent.id})">Ver Detalhes</button>
+                        <button onclick="confirmDeleteAgent(${agent.id})" style="background-color: #d9534f;">Excluir</button>
+                    </div>
+                `;
+                container.appendChild(agentItem);
+            });
+        }
+        
+        // Atualiza a lista de ofensores do mês
+        function updateOffendersList() {
+            const monthInput = document.getElementById('offender-month').value;
+            const portfolioFilter = document.getElementById('offender-portfolio').value;
+            
+            if (!monthInput) return;
+            
+            // Obtém o primeiro e último dia do mês selecionado
+            const [year, month] = monthInput.split('-');
+            const startDate = `${year}-${month}-01`;
+            const endDate = `${year}-${month}-${new Date(year, month, 0).getDate()}`;
+            
+            // Filtra as avaliações do mês selecionado
+            const monthEvals = evaluations.filter(eval => {
+                if (eval.date < startDate || eval.date > endDate) return false;
+                if (portfolioFilter && eval.portfolio !== portfolioFilter) return false;
+                return true;
+            });
+            
+            // Agrupa por agente e calcula a média
+            const agentScores = {};
+            monthEvals.forEach(eval => {
+                if (!agentScores[eval.agentId]) {
+                    agentScores[eval.agentId] = {
+                        total: 0,
+                        count: 0,
+                        agent: agents.find(a => a.id === eval.agentId)
+                    };
+                }
+                agentScores[eval.agentId].total += eval.score;
+                agentScores[eval.agentId].count++;
+            });
+            
+            // Filtra agentes com média abaixo de 80
+            const offenders = Object.values(agentScores)
+                .map(data => ({
+                    agent: data.agent,
+                    average: Math.round(data.total / data.count),
+                    evaluations: monthEvals.filter(e => e.agentId === data.agent.id)
+                }))
+                .filter(data => data.average < 80)
+                .sort((a, b) => a.average - b.average);
+            
+            // Atualiza a interface
+            const container = document.getElementById('offenders-list-container');
+            container.innerHTML = '';
+            
+            if (offenders.length === 0) {
+                container.innerHTML = '<p>Nenhum ofensor encontrado no período selecionado.</p>';
+                return;
+            }
+            
+            offenders.forEach(offender => {
+                const offenderCard = document.createElement('div');
+                offenderCard.className = 'offender-card';
+                
+                const evalList = offender.evaluations.map(eval => {
+                    const date = new Date(eval.date).toLocaleDateString('pt-BR');
+                    return `<li>${date} - ${eval.score}/100 (${eval.supervisor})</li>`;
+                }).join('');
+                
+                offenderCard.innerHTML = `
+                    <h3>${offender.agent.name} - Média: ${offender.average}/100</h3>
+                    <p><strong>Cargo:</strong> ${offender.agent.position} | <strong>Carteira:</strong> ${offender.agent.portfolio || 'Não definida'}</p>
+                    <h4>Avaliações:</h4>
+                    <ul>${evalList}</ul>
+                `;
+                
+                container.appendChild(offenderCard);
+            });
+        }
+        
+        // Atualiza a visualização por carteira
+        function updatePortfolioView() {
+            const portfolioFilter = document.getElementById('view-portfolio').value;
+            const container = document.getElementById('portfolio-view-container');
+            container.innerHTML = '';
+            
+            // Agrupa agentes por carteira
+            const agentsByPortfolio = {};
+            agents.forEach(agent => {
+                const portfolio = agent.portfolio || 'Sem carteira definida';
+                if (!agentsByPortfolio[portfolio]) {
+                    agentsByPortfolio[portfolio] = [];
+                }
+                agentsByPortfolio[portfolio].push(agent);
+            });
+            
+            // Filtra se necessário
+            const portfoliosToShow = portfolioFilter ? 
+                { [portfolioFilter]: agentsByPortfolio[portfolioFilter] || [] } : 
+                agentsByPortfolio;
+            
+            // Cria as seções para cada carteira
+            for (const [portfolio, portfolioAgents] of Object.entries(portfoliosToShow)) {
+                if (!portfolioAgents || portfolioAgents.length === 0) continue;
+                
+                const portfolioSection = document.createElement('div');
+                portfolioSection.className = 'portfolio-section';
+                
+                const portfolioTitle = document.createElement('h3');
+                portfolioTitle.textContent = portfolio;
+                portfolioSection.appendChild(portfolioTitle);
+                
+                const agentsContainer = document.createElement('div');
+                agentsContainer.className = 'portfolio-agents';
+                
+                portfolioAgents.forEach(agent => {
+                    const agentCard = document.createElement('div');
+                    agentCard.className = 'portfolio-agent-card';
+                    
+                    // Calcula a média do agente
+                    const agentEvals = evaluations.filter(e => e.agentId === agent.id);
+                    const avgScore = agentEvals.length > 0 ? 
+                        Math.round(agentEvals.reduce((sum, eval) => sum + eval.score, 0) / agentEvals.length) : 0;
+                    
+                    agentCard.innerHTML = `
+                        <h4>${agent.name}</h4>
+                        <p><strong>Cargo:</strong> ${agent.position}</p>
+                        <p><strong>Avaliações:</strong> ${agentEvals.length}</p>
+                        <p><strong>Média:</strong> ${avgScore > 0 ? avgScore + '/100' : 'N/A'}</p>
+                        <button onclick="viewAgentDetails(${agent.id})" style="margin-top: 10px;">Ver Detalhes</button>
+                    `;
+                    
+                    agentsContainer.appendChild(agentCard);
+                });
+                
+                portfolioSection.appendChild(agentsContainer);
+                container.appendChild(portfolioSection);
+            }
+            
+            if (container.innerHTML === '') {
+                container.innerHTML = '<p>Nenhum agente encontrado para a carteira selecionada.</p>';
+            }
+        }
+        
+        // Visualiza detalhes de um agente específico
+        function viewAgentDetails(agentId) {
+            currentAgentId = agentId;
+            document.getElementById('filter-agent').value = agentId;
+            openTab('agent-details', event);
+            displayAgentDetails();
+        }
+        
+        // Exporta para Excel
+        function exportToExcel() {
+            // Prepara os dados
+            const data = getFilteredEvaluations().map(eval => {
+                const agent = agents.find(a => a.id === eval.agentId);
+                return {
+                    'Data': eval.date,
+                    'Agente': agent ? agent.name : 'Desconhecido',
+                    'Cargo': agent ? agent.position : '',
+                    'Carteira': agent ? agent.portfolio : '',
+                    'Supervisor': eval.supervisor,
+                    'Carteira Avaliação': eval.portfolio,
+                    'Dados da Ligação': eval.callData,
+                    'Dados do Cliente': eval.clientData,
+                    'Nota': eval.score,
+                    'Feedback': eval.feedback,
+                    'Problemas': eval.issues.join(', '),
+                    'Observações': ''
+                };
+            });
+            
+            // Cria a planilha
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Avaliações");
+            
+            // Exporta o arquivo
+            XLSX.writeFile(wb, 'avaliacoes_qualidade.xlsx');
+        }
+    </script>
+</body>
+</html>
